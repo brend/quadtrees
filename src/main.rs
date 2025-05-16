@@ -59,7 +59,7 @@ struct Quadtree {
     w: f32,
     h: f32,
     points: Vec<Vec2>,
-    children: Vec<Box<Quadtree>>,
+    children: Vec<Quadtree>,
 }
 
 impl Quadtree {
@@ -80,24 +80,15 @@ impl Quadtree {
             return false;
         }
 
-        // If this is a leaf node and has space, add the point
-        if self.children.is_empty() && self.points.len() < MAX_SIZE {
+        // If this node has space, add the point
+        if self.points.len() < MAX_SIZE {
             self.points.push(*p);
             return true;
         }
 
-        // If this is a leaf node but full, subdivide and redistribute points
+        // If this is a leaf node but full, subdivide
         if self.children.is_empty() {
             self.divide();
-            // Redistribute existing points to children
-            let mut points_to_redistribute = std::mem::take(&mut self.points);
-            for point in points_to_redistribute {
-                for child in self.children.iter_mut() {
-                    if child.add(&point) {
-                        break;
-                    }
-                }
-            }
         }
 
         // Add the new point to the appropriate child
@@ -111,21 +102,16 @@ impl Quadtree {
     }
 
     fn divide(&mut self) {
-        if self.children.len() == 0 {
+        if self.children.is_empty() {
             let w_2 = self.w / 2.0;
             let h_2 = self.h / 2.0;
+            self.children.push(Quadtree::new(self.x, self.y, w_2, h_2));
             self.children
-                .push(Box::new(Quadtree::new(self.x, self.y, w_2, h_2)));
+                .push(Quadtree::new(self.x + w_2, self.y, w_2, h_2));
             self.children
-                .push(Box::new(Quadtree::new(self.x + w_2, self.y, w_2, h_2)));
+                .push(Quadtree::new(self.x, self.y + h_2, w_2, h_2));
             self.children
-                .push(Box::new(Quadtree::new(self.x, self.y + h_2, w_2, h_2)));
-            self.children.push(Box::new(Quadtree::new(
-                self.x + w_2,
-                self.y + h_2,
-                w_2,
-                h_2,
-            )));
+                .push(Quadtree::new(self.x + w_2, self.y + h_2, w_2, h_2));
         }
     }
 
