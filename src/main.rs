@@ -44,6 +44,11 @@ async fn main() {
             WHITE,
         );
 
+        let (mx, my) = mouse_position();
+        if let Some(r) = qt.find(mx, my) {
+            draw_rectangle_lines(r.x, r.y, r.w, r.h, 2.0, PINK);
+        }
+
         next_frame().await;
     }
 }
@@ -134,5 +139,19 @@ impl Quadtree {
 
     fn contains(&self, p: &Vec2) -> bool {
         self.points.iter().any(|q| q == p) || self.children.iter().any(|c| c.contains(p))
+    }
+
+    fn find(&self, x: f32, y: f32) -> Option<Rect> {
+        for c in &self.children {
+            match c.find(x, y) {
+                None => (),
+                r => return r,
+            }
+        }
+        if x >= self.x && x <= self.x + self.w && y >= self.y && y <= self.y + self.h {
+            Some(Rect::new(self.x, self.y, self.w, self.h))
+        } else {
+            None
+        }
     }
 }
